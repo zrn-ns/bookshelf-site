@@ -4,6 +4,7 @@
     "subtitle": "試験ガイド完全対応 解説＋模擬試験120問",
     "color": "#78716c",
     "filename": "Claude-Certified-Architect-Foundations-対策本.epub",
+    "coverImage": null,
     "size": "86 KB",
     "readingTime": "約1時間2分",
     "toc": [
@@ -24,6 +25,7 @@
     "subtitle": "メッセージングアプリからターミナルを操る新しい開発ワークフロー",
     "color": "#2D7D9A",
     "filename": "Claude-Code-Channels完全ガイド.epub",
+    "coverImage": "covers/Claude-Code-Channels完全ガイド.jpg",
     "size": "160 KB",
     "readingTime": "約14分",
     "toc": [
@@ -41,6 +43,7 @@
     "subtitle": "公式OSSリポジトリの全体像を読み解く",
     "color": "#D97706",
     "filename": "Everything-Claude-Codeリポジトリ解説.epub",
+    "coverImage": "covers/Everything-Claude-Codeリポジトリ解説.jpg",
     "size": "192 KB",
     "readingTime": "約15分",
     "toc": [
@@ -57,6 +60,7 @@
     "subtitle": "AIコーディングエージェントの振る舞いを変えるスキルフレームワーク",
     "color": "#7C3AED",
     "filename": "Superpowers完全ガイド.epub",
+    "coverImage": "covers/Superpowers完全ガイド.jpg",
     "size": "185 KB",
     "readingTime": "約15分",
     "toc": [
@@ -75,6 +79,7 @@
     "subtitle": "AIエージェントの実行環境を設計する",
     "color": "#5B4FCF",
     "filename": "ハーネスエンジニアリング入門.epub",
+    "coverImage": "covers/ハーネスエンジニアリング入門.jpg",
     "size": "288 KB",
     "readingTime": "約43分",
     "toc": [

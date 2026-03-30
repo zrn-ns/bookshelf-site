@@ -18,6 +18,7 @@ interface BookMeta {
   subtitle: string;
   color: string;
   filename: string;
+  coverImage: string | null;
   size: string;
   readingTime: string;
   toc: string[];
@@ -112,7 +113,9 @@ async function main() {
 
   const siteRoot = new URL("../", import.meta.url).pathname;
   const epubsDir = join(siteRoot, "epubs");
+  const coversDir = join(siteRoot, "covers");
   await ensureDir(epubsDir);
+  await ensureDir(coversDir);
 
   const books: BookMeta[] = [];
 
@@ -149,11 +152,24 @@ async function main() {
 
     await copy(epubPath, join(epubsDir, filename), { overwrite: true });
 
+    // 表紙画像のコピー
+    const coverSrc = join(bookDir, "assets", "cover.jpg");
+    const coverFilename = `${slug}.jpg`;
+    let coverImage: string | null = null;
+    try {
+      await Deno.stat(coverSrc);
+      await copy(coverSrc, join(coversDir, coverFilename), { overwrite: true });
+      coverImage = `covers/${coverFilename}`;
+    } catch {
+      // 表紙画像がない場合はnull
+    }
+
     books.push({
       title: yaml.title,
       subtitle: yaml.subtitle ?? "",
       color: yaml.cover?.color ?? "#78716c",
       filename,
+      coverImage,
       size: formatSize(epubStat.size),
       readingTime: calcReadingTime(totalLines),
       toc,

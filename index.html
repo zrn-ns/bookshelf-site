@@ -27,9 +27,13 @@
         const tocHtml = book.toc.map(ch => `<li>${ch}</li>`).join('');
         const tocId = `toc-${i}`;
 
+        const coverHtml = book.coverImage
+          ? `<img class="book-cover" src="${book.coverImage}" alt="${book.title}">`
+          : `<div class="book-cover-placeholder" style="background:${book.color}"></div>`;
+
         list.innerHTML += `
           <div class="book-item">
-            <div class="book-color" style="background:${book.color}"></div>
+            ${coverHtml}
             <div class="book-info">
               <div class="book-title">${book.title}</div>
               <div class="book-subtitle">${book.subtitle}</div>
