@@ -45,25 +45,26 @@ header p {
 .book-item {
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
-  padding: 1rem 0;
+  gap: 1.25rem;
+  padding: 1.25rem 0;
   border-bottom: 1px solid #e7e5e4;
 }
 
 .book-cover {
-  width: 64px;
-  height: 96px;
+  width: 80px;
+  height: 120px;
   object-fit: cover;
   border-radius: 4px;
   flex-shrink: 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .book-cover-placeholder {
-  width: 64px;
-  height: 96px;
+  width: 80px;
+  height: 120px;
   border-radius: 4px;
   flex-shrink: 0;
+  opacity: 0.6;
 }
 
 .book-info {
@@ -86,48 +87,64 @@ header p {
 .book-meta {
   display: flex;
   gap: 1rem;
-  margin-top: 0.375rem;
+  margin-top: 0.5rem;
   font-size: 0.75rem;
   color: #a8a29e;
 }
 
 .book-actions {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.5rem;
-  flex-shrink: 0;
-  padding-top: 0.25rem;
+  margin-top: 0.625rem;
+}
+
+.btn-read {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3125rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #fff;
+  background: #292524;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-read:hover {
+  background: #44403c;
 }
 
 .btn-download {
   display: inline-flex;
   align-items: center;
-  gap: 0.375rem;
-  padding: 0.375rem 0.75rem;
-  font-size: 0.8125rem;
+  padding: 0.3125rem 0.625rem;
+  font-size: 0.75rem;
   font-weight: 500;
-  color: #292524;
-  background: #f5f5f4;
+  color: #57534e;
+  background: none;
   border: 1px solid #d6d3d1;
-  border-radius: 6px;
+  border-radius: 4px;
   text-decoration: none;
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .btn-download:hover {
-  background: #e7e5e4;
+  background: #f5f5f4;
 }
 
 .btn-toc {
   display: inline-flex;
   align-items: center;
-  padding: 0.375rem 0.5rem;
+  padding: 0.3125rem 0.625rem;
   font-size: 0.75rem;
   color: #78716c;
   background: none;
   border: 1px solid #d6d3d1;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -161,24 +178,6 @@ footer {
   border-top: 1px solid #e7e5e4;
   font-size: 0.75rem;
   color: #a8a29e;
-}
-
-.btn-read {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.375rem 0.75rem;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: #fff;
-  background: #292524;
-  border: 1px solid #292524;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.btn-read:hover {
-  background: #44403c;
 }
 
 /* EPUBリーダーモーダル */
@@ -266,12 +265,13 @@ footer {
   }
 
   .book-item {
-    flex-wrap: wrap;
+    gap: 1rem;
   }
 
-  .book-actions {
-    width: 100%;
-    padding-top: 0.5rem;
+  .book-cover,
+  .book-cover-placeholder {
+    width: 64px;
+    height: 96px;
   }
 
   .book-meta {
