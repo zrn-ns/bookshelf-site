@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bookshelf</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Bookshelf</h1>
+      <p>Claude Codeで生成した技術書コレクション</p>
+    </header>
+    <div id="book-list" class="book-list"></div>
+    <footer>
+      EPUB形式。お手持ちのリーダーアプリで閲覧できます。
+    </footer>
+  </div>
+  <script>
+    async function loadBooks() {
+      const res = await fetch('books.json');
+      const books = await res.json();
+      const list = document.getElementById('book-list');
+
+      books.forEach((book, i) => {
+        const tocHtml = book.toc.map(ch => `<li>${ch}</li>`).join('');
+        const tocId = `toc-${i}`;
+
+        list.innerHTML += `
+          <div class="book-item">
+            <div class="book-color" style="background:${book.color}"></div>
+            <div class="book-info">
+              <div class="book-title">${book.title}</div>
+              <div class="book-subtitle">${book.subtitle}</div>
+              <div class="book-meta">
+                <span>${book.size}</span>
+                <span>${book.readingTime}</span>
+              </div>
+              <div class="toc" id="${tocId}">
+                <ol>${tocHtml}</ol>
+              </div>
+            </div>
+            <div class="book-actions">
+              <a class="btn-download" href="epubs/${book.filename}" download>↓ EPUB</a>
+              <button class="btn-toc" onclick="document.getElementById('${tocId}').classList.toggle('open')">目次</button>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    loadBooks();
+  </script>
+</body>
+</html>
