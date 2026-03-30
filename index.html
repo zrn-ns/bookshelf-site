@@ -55,14 +55,14 @@
                 <span>${book.size}</span>
                 <span>${book.readingTime}</span>
               </div>
-              <div class="book-actions">
-                <button class="btn-read" onclick="openReader('epubs/${book.filename}', '${book.title.replace(/'/g, "\\'")}')">読む</button>
-                <a class="btn-download" href="epubs/${book.filename}" download>↓ EPUB</a>
-                <button class="btn-toc" onclick="document.getElementById('${tocId}').classList.toggle('open')">目次</button>
-              </div>
               <div class="toc" id="${tocId}">
                 <ol>${tocHtml}</ol>
               </div>
+            </div>
+            <div class="book-actions">
+              <button class="btn-read" onclick="openReader('epubs/${book.filename}', '${book.title.replace(/'/g, "\\'")}')">読む</button>
+              <a class="btn-download" href="epubs/${book.filename}" download>↓ EPUB</a>
+              <button class="btn-toc" onclick="document.getElementById('${tocId}').classList.toggle('open')">目次</button>
             </div>
           </div>
         `;
