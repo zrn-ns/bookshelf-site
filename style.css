@@ -1,3 +1,41 @@
+:root {
+  --bg: #fafaf9;
+  --bg-hover: #f5f5f4;
+  --bg-toc: #f5f5f4;
+  --fg: #292524;
+  --fg-secondary: #78716c;
+  --fg-muted: #a8a29e;
+  --fg-toc: #57534e;
+  --border: #e7e5e4;
+  --border-header: #292524;
+  --btn-border: #d6d3d1;
+  --btn-read-bg: #292524;
+  --btn-read-fg: #fff;
+  --btn-read-hover: #44403c;
+  --reader-bg: #fff;
+  --shadow: rgba(0, 0, 0, 0.15);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1917;
+    --bg-hover: #292524;
+    --bg-toc: #292524;
+    --fg: #e7e5e4;
+    --fg-secondary: #a8a29e;
+    --fg-muted: #78716c;
+    --fg-toc: #a8a29e;
+    --border: #44403c;
+    --border-header: #e7e5e4;
+    --btn-border: #57534e;
+    --btn-read-bg: #e7e5e4;
+    --btn-read-fg: #1c1917;
+    --btn-read-hover: #d6d3d1;
+    --reader-bg: #1c1917;
+    --shadow: rgba(0, 0, 0, 0.4);
+  }
+}
+
 *,
 *::before,
 *::after {
@@ -8,8 +46,8 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans CJK JP", sans-serif;
-  color: #292524;
-  background: #fafaf9;
+  color: var(--fg);
+  background: var(--bg);
   line-height: 1.6;
   padding: 2rem 1rem;
 }
@@ -20,7 +58,7 @@ body {
 }
 
 header {
-  border-bottom: 2px solid #292524;
+  border-bottom: 2px solid var(--border-header);
   padding-bottom: 0.75rem;
   margin-bottom: 2rem;
 }
@@ -31,7 +69,7 @@ header h1 {
 }
 
 header p {
-  color: #78716c;
+  color: var(--fg-secondary);
   font-size: 0.875rem;
   margin-top: 0.25rem;
 }
@@ -45,13 +83,13 @@ header p {
 }
 
 .sort-label {
-  color: #a8a29e;
+  color: var(--fg-muted);
 }
 
 .sort-btn {
   background: none;
   border: none;
-  color: #78716c;
+  color: var(--fg-secondary);
   font-size: 0.75rem;
   cursor: pointer;
   padding: 0.25rem 0.5rem;
@@ -60,12 +98,12 @@ header p {
 }
 
 .sort-btn:hover {
-  background: #f5f5f4;
+  background: var(--bg-hover);
 }
 
 .sort-btn.active {
   font-weight: 600;
-  color: #292524;
+  color: var(--fg);
 }
 
 .book-list {
@@ -79,7 +117,7 @@ header p {
   align-items: flex-start;
   gap: 1.25rem;
   padding: 1.25rem 0;
-  border-bottom: 1px solid #e7e5e4;
+  border-bottom: 1px solid var(--border);
 }
 
 .book-cover {
@@ -88,7 +126,7 @@ header p {
   object-fit: cover;
   border-radius: 4px;
   flex-shrink: 0;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 6px var(--shadow);
 }
 
 .book-cover-placeholder {
@@ -107,12 +145,12 @@ header p {
 .book-title {
   font-size: 1rem;
   font-weight: 600;
-  color: #292524;
+  color: var(--fg);
 }
 
 .book-subtitle {
   font-size: 0.8125rem;
-  color: #78716c;
+  color: var(--fg-secondary);
   margin-top: 0.125rem;
 }
 
@@ -121,7 +159,7 @@ header p {
   gap: 1rem;
   margin-top: 0.5rem;
   font-size: 0.75rem;
-  color: #a8a29e;
+  color: var(--fg-muted);
 }
 
 .book-actions {
@@ -137,8 +175,8 @@ header p {
   padding: 0.3125rem 0.625rem;
   font-size: 0.75rem;
   font-weight: 500;
-  color: #fff;
-  background: #292524;
+  color: var(--btn-read-fg);
+  background: var(--btn-read-bg);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -146,7 +184,7 @@ header p {
 }
 
 .btn-read:hover {
-  background: #44403c;
+  background: var(--btn-read-hover);
 }
 
 .btn-download {
@@ -155,9 +193,9 @@ header p {
   padding: 0.3125rem 0.625rem;
   font-size: 0.75rem;
   font-weight: 500;
-  color: #57534e;
+  color: var(--fg-toc);
   background: none;
-  border: 1px solid #d6d3d1;
+  border: 1px solid var(--btn-border);
   border-radius: 4px;
   text-decoration: none;
   cursor: pointer;
@@ -165,7 +203,7 @@ header p {
 }
 
 .btn-download:hover {
-  background: #f5f5f4;
+  background: var(--bg-hover);
 }
 
 .btn-toc {
@@ -173,26 +211,26 @@ header p {
   align-items: center;
   padding: 0.3125rem 0.625rem;
   font-size: 0.75rem;
-  color: #78716c;
+  color: var(--fg-secondary);
   background: none;
-  border: 1px solid #d6d3d1;
+  border: 1px solid var(--btn-border);
   border-radius: 4px;
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .btn-toc:hover {
-  background: #f5f5f4;
+  background: var(--bg-hover);
 }
 
 .toc {
   display: none;
   margin-top: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background: #f5f5f4;
+  background: var(--bg-toc);
   border-radius: 6px;
   font-size: 0.75rem;
-  color: #57534e;
+  color: var(--fg-toc);
   line-height: 1.8;
 }
 
@@ -205,21 +243,21 @@ header p {
 }
 
 .header-link {
-  color: #292524;
+  color: var(--fg);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
 .header-link:hover {
-  color: #57534e;
+  color: var(--fg-secondary);
 }
 
 footer {
   margin-top: 2rem;
   padding-top: 1rem;
-  border-top: 1px solid #e7e5e4;
+  border-top: 1px solid var(--border);
   font-size: 0.75rem;
-  color: #a8a29e;
+  color: var(--fg-muted);
   line-height: 1.7;
 }
 
@@ -228,13 +266,13 @@ footer p + p {
 }
 
 .footer-links a {
-  color: #78716c;
+  color: var(--fg-secondary);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
 .footer-links a:hover {
-  color: #292524;
+  color: var(--fg);
 }
 
 /* EPUBリーダーモーダル */
@@ -243,7 +281,7 @@ footer p + p {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: #fff;
+  background: var(--reader-bg);
   flex-direction: column;
 }
 
@@ -256,14 +294,14 @@ footer p + p {
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 1rem;
-  border-bottom: 1px solid #e7e5e4;
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
 .reader-title {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #292524;
+  color: var(--fg);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -272,7 +310,7 @@ footer p + p {
 .reader-close {
   font-size: 1.5rem;
   line-height: 1;
-  color: #78716c;
+  color: var(--fg-secondary);
   background: none;
   border: none;
   cursor: pointer;
@@ -282,8 +320,8 @@ footer p + p {
 }
 
 .reader-close:hover {
-  background: #f5f5f4;
-  color: #292524;
+  background: var(--bg-hover);
+  color: var(--fg);
 }
 
 .reader-body {
@@ -305,15 +343,15 @@ footer p + p {
   background: none;
   border: none;
   font-size: 1.5rem;
-  color: #a8a29e;
+  color: var(--fg-muted);
   cursor: pointer;
   flex-shrink: 0;
   transition: color 0.15s, background 0.15s;
 }
 
 .reader-nav:hover {
-  color: #292524;
-  background: #f5f5f4;
+  color: var(--fg);
+  background: var(--bg-hover);
 }
 
 @media (max-width: 480px) {
