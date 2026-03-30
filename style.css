@@ -240,7 +240,8 @@ footer {
 
 #reader-area {
   flex: 1;
-  overflow: hidden;
+  min-height: 0;
+  position: relative;
 }
 
 .reader-nav {
