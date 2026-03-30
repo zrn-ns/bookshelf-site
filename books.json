@@ -1,0 +1,92 @@
+[
+  {
+    "title": "Claude Certified Architect – Foundations 対策本",
+    "subtitle": "試験ガイド完全対応 解説＋模擬試験120問",
+    "color": "#78716c",
+    "filename": "Claude-Certified-Architect-Foundations-対策本.epub",
+    "size": "86 KB",
+    "readingTime": "約1時間2分",
+    "toc": [
+      "第1章 試験概要と学習戦略",
+      "第2章 Domain 1: Agentic Architecture & Orchestration",
+      "第3章 Domain 2: Claude Code Configuration & Workflows",
+      "第4章 Domain 3: Prompt Engineering & Structured Output",
+      "第5章 Domain 4: Tool Design & MCP Integration",
+      "第6章 Domain 5: Context Management & Reliability",
+      "第7章 6つのシナリオ攻略",
+      "第8章 模擬試験 第1回",
+      "第9章 模擬試験 第2回",
+      "付録 技術用語集"
+    ]
+  },
+  {
+    "title": "Claude Code Channels完全ガイド",
+    "subtitle": "メッセージングアプリからターミナルを操る新しい開発ワークフロー",
+    "color": "#2D7D9A",
+    "filename": "Claude-Code-Channels完全ガイド.epub",
+    "size": "160 KB",
+    "readingTime": "約14分",
+    "toc": [
+      "第1章 Channelsの概要とアーキテクチャ",
+      "第2章 セットアップ",
+      "第3章 プラットフォーム別ガイド",
+      "第4章 セキュリティモデル",
+      "第5章 CI/CDとカスタムチャネル",
+      "第6章 実践レシピとトラブルシューティング",
+      "付録 コマンドリファレンス"
+    ]
+  },
+  {
+    "title": "Everything Claude Codeリポジトリ解説",
+    "subtitle": "公式OSSリポジトリの全体像を読み解く",
+    "color": "#D97706",
+    "filename": "Everything-Claude-Codeリポジトリ解説.epub",
+    "size": "192 KB",
+    "readingTime": "約15分",
+    "toc": [
+      "第1章 リポジトリの全体像",
+      "第2章 アーキテクチャ",
+      "第3章 ツールシステム",
+      "第4章 拡張機構",
+      "第5章 ユーザーインターフェース",
+      "第6章 テストとCI/CD"
+    ]
+  },
+  {
+    "title": "Superpowers完全ガイド",
+    "subtitle": "AIコーディングエージェントの振る舞いを変えるスキルフレームワーク",
+    "color": "#7C3AED",
+    "filename": "Superpowers完全ガイド.epub",
+    "size": "185 KB",
+    "readingTime": "約15分",
+    "toc": [
+      "第1章 Superpowersの概要",
+      "第2章 インストールとセットアップ",
+      "第3章 brainstorming --- 設計フェーズ",
+      "第4章 writing-plans / executing-plans --- 計画と実行",
+      "第5章 test-driven-development",
+      "第6章 デバッグと検証",
+      "第7章 コードレビューとGit操作",
+      "第8章 スキルの自作と拡張"
+    ]
+  },
+  {
+    "title": "ハーネスエンジニアリング入門",
+    "subtitle": "AIエージェントの実行環境を設計する",
+    "color": "#5B4FCF",
+    "filename": "ハーネスエンジニアリング入門.epub",
+    "size": "288 KB",
+    "readingTime": "約43分",
+    "toc": [
+      "まえがき",
+      "第1章 ハーネスとは何か",
+      "第2章 ハーネスの解剖学",
+      "第3章 コンテキストエンジニアリング",
+      "第4章 ツールと権限モデル",
+      "第5章 フックとガードレール",
+      "第6章 ケーススタディ",
+      "第7章 設計パターン",
+      "第8章 ハーネスエンジニアリングの未来"
+    ]
+  }
+]
