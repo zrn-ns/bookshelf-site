@@ -106,6 +106,26 @@
 
     let book = null;
     let rendition = null;
+    const darkMq = window.matchMedia('(prefers-color-scheme: dark)');
+
+    function applyReaderTheme(isDark) {
+      if (!rendition) return;
+      rendition.themes.default(isDark ? {
+        'body':                { 'background': '#1c1917 !important', 'color': '#e7e5e4 !important' },
+        'h1,h2,h3,h4,h5,h6':  { 'color': '#e7e5e4 !important' },
+        'a':                   { 'color': '#93c5fd !important' },
+        'code, pre':           { 'background': '#292524 !important', 'color': '#d6d3d1 !important' },
+        'blockquote':          { 'border-color': '#57534e !important', 'color': '#a8a29e !important' },
+        'table, th, td':       { 'border-color': '#44403c !important' },
+        'th':                  { 'background': '#292524 !important', 'color': '#e7e5e4 !important' },
+        'td':                  { 'background': '#1c1917 !important' },
+        'img':                 { 'opacity': '0.9' }
+      } : {});
+    }
+
+    function onDarkMqChange(e) {
+      applyReaderTheme(e.matches);
+    }
 
     function openReader(url, title) {
       document.getElementById('reader-title').textContent = title;
@@ -133,6 +153,10 @@
       // キーボードナビゲーション
       rendition.on('keyup', handleKey);
       document.addEventListener('keyup', handleKey);
+
+      // ダークモード対応
+      applyReaderTheme(darkMq.matches);
+      darkMq.addEventListener('change', onDarkMqChange);
     }
 
     function closeReader() {
@@ -140,6 +164,7 @@
       modal.classList.remove('open');
       document.body.style.overflow = '';
       document.removeEventListener('keyup', handleKey);
+      darkMq.removeEventListener('change', onDarkMqChange);
       if (book) { book.destroy(); book = null; rendition = null; }
     }
 
