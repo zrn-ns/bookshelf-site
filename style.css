@@ -206,12 +206,37 @@ header p {
   padding-left: 1.25rem;
 }
 
+.header-link {
+  color: #292524;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.header-link:hover {
+  color: #57534e;
+}
+
 footer {
   margin-top: 2rem;
   padding-top: 1rem;
   border-top: 1px solid #e7e5e4;
   font-size: 0.75rem;
   color: #a8a29e;
+  line-height: 1.7;
+}
+
+footer p + p {
+  margin-top: 0.5rem;
+}
+
+.footer-links a {
+  color: #78716c;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.footer-links a:hover {
+  color: #292524;
 }
 
 /* EPUBリーダーモーダル */
