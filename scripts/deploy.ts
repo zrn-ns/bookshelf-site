@@ -19,14 +19,17 @@ interface BookMeta {
   color: string;
   filename: string;
   coverImage: string | null;
+  date: string;
   size: string;
   readingTime: string;
+  readingTimeMinutes: number;
   toc: string[];
 }
 
 interface BookYaml {
   title: string;
   subtitle?: string;
+  date?: string;
   cover?: { color?: string };
 }
 
@@ -170,8 +173,10 @@ async function main() {
       color: yaml.cover?.color ?? "#78716c",
       filename,
       coverImage,
+      date: yaml.date ?? "",
       size: formatSize(epubStat.size),
       readingTime: calcReadingTime(totalLines),
+      readingTimeMinutes: Math.round(totalLines / LINES_PER_MINUTE),
       toc,
     });
 
