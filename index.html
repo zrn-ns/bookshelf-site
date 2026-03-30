@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bookshelf</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/epub.js/0.3.93/epub.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -16,6 +17,18 @@
     <footer>
       EPUB形式。お手持ちのリーダーアプリで閲覧できます。
     </footer>
+  </div>
+
+  <div id="reader-modal" class="reader-modal">
+    <div class="reader-header">
+      <span id="reader-title" class="reader-title"></span>
+      <button class="reader-close" onclick="closeReader()">×</button>
+    </div>
+    <div class="reader-body">
+      <button class="reader-nav reader-prev" onclick="rendition.prev()">‹</button>
+      <div id="reader-area"></div>
+      <button class="reader-nav reader-next" onclick="rendition.next()">›</button>
+    </div>
   </div>
   <script>
     async function loadBooks() {
@@ -46,6 +59,7 @@
               </div>
             </div>
             <div class="book-actions">
+              <button class="btn-read" onclick="openReader('epubs/${book.filename}', '${book.title.replace(/'/g, "\\'")}')">読む</button>
               <a class="btn-download" href="epubs/${book.filename}" download>↓ EPUB</a>
               <button class="btn-toc" onclick="document.getElementById('${tocId}').classList.toggle('open')">目次</button>
             </div>
@@ -55,6 +69,49 @@
     }
 
     loadBooks();
+
+    let book = null;
+    let rendition = null;
+
+    function openReader(url, title) {
+      document.getElementById('reader-title').textContent = title;
+      const modal = document.getElementById('reader-modal');
+      modal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+
+      // 前のインスタンスを破棄
+      if (book) { book.destroy(); }
+
+      const area = document.getElementById('reader-area');
+      area.innerHTML = '';
+
+      book = ePub(url);
+      rendition = book.renderTo(area, {
+        width: '100%',
+        height: '100%',
+        spread: 'none'
+      });
+      rendition.display();
+
+      // キーボードナビゲーション
+      rendition.on('keyup', handleKey);
+      document.addEventListener('keyup', handleKey);
+    }
+
+    function closeReader() {
+      const modal = document.getElementById('reader-modal');
+      modal.classList.remove('open');
+      document.body.style.overflow = '';
+      document.removeEventListener('keyup', handleKey);
+      if (book) { book.destroy(); book = null; rendition = null; }
+    }
+
+    function handleKey(e) {
+      if (e.key === 'Escape') { closeReader(); return; }
+      if (!rendition) return;
+      if (e.key === 'ArrowLeft') rendition.prev();
+      if (e.key === 'ArrowRight') rendition.next();
+    }
   </script>
 </body>
 </html>

@@ -163,6 +163,102 @@ footer {
   color: #a8a29e;
 }
 
+.btn-read {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #fff;
+  background: #292524;
+  border: 1px solid #292524;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-read:hover {
+  background: #44403c;
+}
+
+/* EPUBリーダーモーダル */
+.reader-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #fff;
+  flex-direction: column;
+}
+
+.reader-modal.open {
+  display: flex;
+}
+
+.reader-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #e7e5e4;
+  flex-shrink: 0;
+}
+
+.reader-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #292524;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reader-close {
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #78716c;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.reader-close:hover {
+  background: #f5f5f4;
+  color: #292524;
+}
+
+.reader-body {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  position: relative;
+}
+
+#reader-area {
+  flex: 1;
+  overflow: hidden;
+}
+
+.reader-nav {
+  width: 48px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #a8a29e;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
+}
+
+.reader-nav:hover {
+  color: #292524;
+  background: #f5f5f4;
+}
+
 @media (max-width: 480px) {
   body {
     padding: 1rem 0.75rem;
@@ -180,5 +276,10 @@ footer {
   .book-meta {
     flex-wrap: wrap;
     gap: 0.5rem;
+  }
+
+  .reader-nav {
+    width: 36px;
+    font-size: 1.25rem;
   }
 }
