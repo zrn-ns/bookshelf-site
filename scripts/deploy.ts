@@ -33,7 +33,7 @@ interface BookYaml {
   cover?: { color?: string };
 }
 
-const LINES_PER_MINUTE = 50;
+const CHARS_PER_MINUTE = 400;
 
 function toSlug(title: string): string {
   return title
@@ -51,8 +51,8 @@ function formatSize(bytes: number): string {
   return `${mb.toFixed(2)} MB`;
 }
 
-function calcReadingTime(totalLines: number): string {
-  const minutes = Math.round(totalLines / LINES_PER_MINUTE);
+function calcReadingTime(totalChars: number): string {
+  const minutes = Math.round(totalChars / CHARS_PER_MINUTE);
   if (minutes < 60) return `約${minutes}分`;
   const hours = Math.floor(minutes / 60);
   const remaining = minutes % 60;
@@ -83,12 +83,16 @@ async function extractToc(srcDir: string): Promise<string[]> {
   return toc;
 }
 
-async function countLines(srcDir: string): Promise<number> {
+async function countChars(srcDir: string): Promise<number> {
   let total = 0;
   for await (const entry of Deno.readDir(srcDir)) {
     if (entry.isFile && entry.name.endsWith(".md") && !entry.name.startsWith(".")) {
       const content = await Deno.readTextFile(join(srcDir, entry.name));
-      total += content.split("\n").length;
+      // Mermaidブロックを除外
+      const stripped = content.replace(/```mermaid[\s\S]*?```/g, "");
+      // 空行を除外し、残りの文字数をカウント
+      const lines = stripped.split("\n").filter((line) => line.trim().length > 0);
+      total += lines.join("").length;
     }
   }
   return total;
@@ -148,7 +152,7 @@ async function main() {
 
     const epubStat = await Deno.stat(epubPath);
     const toc = await extractToc(srcDir);
-    const totalLines = await countLines(srcDir);
+    const totalChars = await countChars(srcDir);
 
     const slug = toSlug(yaml.title);
     const filename = `${slug}.epub`;
@@ -175,12 +179,12 @@ async function main() {
       coverImage,
       date: yaml.date ?? "",
       size: formatSize(epubStat.size),
-      readingTime: calcReadingTime(totalLines),
-      readingTimeMinutes: Math.round(totalLines / LINES_PER_MINUTE),
+      readingTime: calcReadingTime(totalChars),
+      readingTimeMinutes: Math.round(totalChars / CHARS_PER_MINUTE),
       toc,
     });
 
-    console.log(`📖 ${yaml.title} (${formatSize(epubStat.size)}, ${calcReadingTime(totalLines)})`);
+    console.log(`📖 ${yaml.title} (${formatSize(epubStat.size)}, ${calcReadingTime(totalChars)})`);
   }
 
   books.sort((a, b) => a.title.localeCompare(b.title, "ja"));
