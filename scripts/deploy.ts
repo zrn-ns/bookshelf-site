@@ -5,12 +5,14 @@
  * books.jsonとcovers/を生成するデプロイスクリプト。
  *
  * 使い方:
- *   deno run --allow-read --allow-write --allow-env scripts/deploy.ts
+ *   deno run --allow-read --allow-write --allow-env scripts/deploy.ts [--out _site]
  */
 
 import JSZip from "https://esm.sh/jszip@3.10.1";
 import { ensureDir } from "https://deno.land/std@0.224.0/fs/ensure_dir.ts";
+import { copy } from "https://deno.land/std@0.224.0/fs/copy.ts";
 import { join } from "https://deno.land/std@0.224.0/path/mod.ts";
+import { parseArgs } from "https://deno.land/std@0.224.0/cli/parse_args.ts";
 import { DOMParser } from "https://deno.land/x/deno_dom@v0.1.48/deno-dom-wasm.ts";
 
 interface BookMeta {
@@ -274,9 +276,22 @@ async function processEpub(
 }
 
 async function main() {
+  const args = parseArgs(Deno.args, { string: ["out"] });
   const siteRoot = new URL("../", import.meta.url).pathname;
+  const outDir = args.out ? join(Deno.cwd(), args.out) : siteRoot;
+
+  // --out指定時はソースファイルを出力先にコピー
+  if (args.out) {
+    await ensureDir(outDir);
+    const sourceFiles = ["index.html", "style.css"];
+    for (const file of sourceFiles) {
+      await copy(join(siteRoot, file), join(outDir, file), { overwrite: true });
+    }
+    await copy(join(siteRoot, "epubs"), join(outDir, "epubs"), { overwrite: true });
+  }
+
   const epubsDir = join(siteRoot, "epubs");
-  const coversDir = join(siteRoot, "covers");
+  const coversDir = join(outDir, "covers");
   await ensureDir(coversDir);
 
   const books: BookMeta[] = [];
@@ -296,7 +311,7 @@ async function main() {
 
   books.sort((a, b) => a.title.localeCompare(b.title, "ja"));
 
-  const booksJsonPath = join(siteRoot, "books.json");
+  const booksJsonPath = join(outDir, "books.json");
   await Deno.writeTextFile(booksJsonPath, JSON.stringify(books, null, 2));
 
   console.log(`\n✅ ${books.length}冊のデータを生成しました`);

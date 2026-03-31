@@ -22,10 +22,10 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - run: deno run --allow-read --allow-write --allow-env scripts/deploy.ts
+      - run: deno run --allow-read --allow-write --allow-env scripts/deploy.ts --out _site
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
 
   deploy:
     needs: build
