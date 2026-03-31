@@ -1,17 +1,17 @@
-#!/usr/bin/env -S deno run --allow-read --allow-write
+#!/usr/bin/env -S deno run --allow-read --allow-write --allow-env
 
 /**
- * bookshelfから書籍メタデータとEPUBを収集し、
- * books.jsonとepubs/を生成するデプロイスクリプト。
+ * epubs/ディレクトリ内のEPUBファイルからメタデータを抽出し、
+ * books.jsonとcovers/を生成するデプロイスクリプト。
  *
  * 使い方:
- *   deno run --allow-read --allow-write scripts/deploy.ts /path/to/bookshelf
+ *   deno run --allow-read --allow-write --allow-env scripts/deploy.ts
  */
 
-import { parse as parseYaml } from "https://deno.land/std@0.224.0/yaml/parse.ts";
-import { copy } from "https://deno.land/std@0.224.0/fs/copy.ts";
+import JSZip from "https://esm.sh/jszip@3.10.1";
 import { ensureDir } from "https://deno.land/std@0.224.0/fs/ensure_dir.ts";
 import { join } from "https://deno.land/std@0.224.0/path/mod.ts";
+import { DOMParser } from "https://deno.land/x/deno_dom@v0.1.48/deno-dom-wasm.ts";
 
 interface BookMeta {
   title: string;
@@ -26,14 +26,8 @@ interface BookMeta {
   toc: string[];
 }
 
-interface BookYaml {
-  title: string;
-  subtitle?: string;
-  date?: string;
-  cover?: { color?: string };
-}
-
 const CHARS_PER_MINUTE = 400;
+const DEFAULT_PLACEHOLDER_COLOR = "#78716c";
 
 function toSlug(title: string): string {
   return title
@@ -60,131 +54,240 @@ function calcReadingTime(totalChars: number): string {
   return `約${hours}時間${remaining}分`;
 }
 
-async function extractToc(srcDir: string): Promise<string[]> {
-  const toc: string[] = [];
-  const files: string[] = [];
+function formatDate(isoDate: string): string {
+  const d = new Date(isoDate);
+  if (isNaN(d.getTime())) return "";
+  return `${d.getFullYear()}年${d.getMonth() + 1}月`;
+}
 
-  for await (const entry of Deno.readDir(srcDir)) {
-    if (entry.isFile && entry.name.endsWith(".md") && !entry.name.startsWith(".")) {
-      files.push(entry.name);
+function parseXml(text: string): Document {
+  const doc = new DOMParser().parseFromString(text, "text/html");
+  if (!doc) throw new Error("XMLパースに失敗");
+  return doc;
+}
+
+async function getOpfPath(zip: JSZip): Promise<string> {
+  const containerXml = await zip.file("META-INF/container.xml")?.async("string");
+  if (!containerXml) throw new Error("container.xmlが見つかりません");
+  const doc = parseXml(containerXml);
+  const rootfile = doc.querySelector("rootfile");
+  const fullPath = rootfile?.getAttribute("full-path");
+  if (!fullPath) throw new Error("content.opfのパスが見つかりません");
+  return fullPath;
+}
+
+interface OpfData {
+  title: string;
+  subtitle: string;
+  date: string;
+  coverHref: string | null;
+  navHref: string | null;
+  spineItems: string[];
+  opfDir: string;
+}
+
+async function parseOpf(zip: JSZip, opfPath: string): Promise<OpfData> {
+  const opfDir = opfPath.includes("/") ? opfPath.substring(0, opfPath.lastIndexOf("/")) : "";
+  const opfText = await zip.file(opfPath)?.async("string");
+  if (!opfText) throw new Error(`${opfPath}が見つかりません`);
+
+  const doc = parseXml(opfText);
+
+  // メタデータ抽出
+  const title = doc.querySelector("dc\\:title, title")?.textContent?.trim() ?? "";
+  const subtitle = doc.querySelector("dc\\:description, description")?.textContent?.trim() ?? "";
+
+  // 日付: dc:dateが空ならdcterms:modifiedから取得
+  let date = doc.querySelector("dc\\:date, date[id]")?.textContent?.trim() ?? "";
+  if (!date) {
+    for (const meta of doc.querySelectorAll("meta")) {
+      if (meta.getAttribute("property") === "dcterms:modified") {
+        date = formatDate(meta.textContent?.trim() ?? "");
+        break;
+      }
     }
   }
 
-  files.sort();
+  // カバー画像: meta[name="cover"]のcontent → manifestのid → href
+  let coverHref: string | null = null;
+  for (const meta of doc.querySelectorAll("meta")) {
+    if (meta.getAttribute("name") === "cover") {
+      const coverId = meta.getAttribute("content");
+      if (coverId) {
+        const coverItem = doc.querySelector(`item[id="${coverId}"]`);
+        if (coverItem) {
+          coverHref = coverItem.getAttribute("href");
+        }
+      }
+      break;
+    }
+  }
+  if (!coverHref) {
+    for (const item of doc.querySelectorAll("item")) {
+      if (item.getAttribute("properties")?.includes("cover-image")) {
+        coverHref = item.getAttribute("href");
+        break;
+      }
+    }
+  }
 
-  for (const file of files) {
-    const content = await Deno.readTextFile(join(srcDir, file));
-    const match = content.match(/^# (.+)$/m);
-    if (match) {
-      toc.push(match[1]);
+  // nav.xhtmlの特定: properties="nav"を持つitem
+  let navHref: string | null = null;
+  for (const item of doc.querySelectorAll("item")) {
+    if (item.getAttribute("properties")?.includes("nav")) {
+      navHref = item.getAttribute("href");
+      break;
+    }
+  }
+
+  // spine: itemrefのidref → manifestのhref
+  const spineItems: string[] = [];
+  const itemrefs = doc.querySelectorAll("itemref");
+  for (const itemref of itemrefs) {
+    const idref = itemref.getAttribute("idref");
+    if (idref) {
+      const item = doc.querySelector(`item[id="${idref}"]`);
+      const href = item?.getAttribute("href");
+      if (href) {
+        spineItems.push(href);
+      }
+    }
+  }
+
+  return { title, subtitle, date, coverHref, navHref, spineItems, opfDir };
+}
+
+async function extractToc(zip: JSZip, opfDir: string, navHref: string): Promise<string[]> {
+  const navPath = opfDir ? `${opfDir}/${navHref}` : navHref;
+  const navText = await zip.file(navPath)?.async("string");
+  if (!navText) return [];
+
+  const doc = parseXml(navText);
+  const toc: string[] = [];
+
+  let navEl: Element | null = null;
+  for (const nav of doc.querySelectorAll("nav")) {
+    const epubType = nav.getAttribute("epub:type");
+    if (epubType === "toc") {
+      navEl = nav;
+      break;
+    }
+  }
+  if (!navEl) return [];
+
+  const topOl = navEl.querySelector("ol");
+  if (!topOl) return [];
+
+  for (const li of topOl.children) {
+    if (li.tagName === "LI") {
+      const a = li.querySelector(":scope > a");
+      if (a) {
+        const text = a.textContent?.trim();
+        if (text) toc.push(text);
+      }
     }
   }
 
   return toc;
 }
 
-async function countChars(srcDir: string): Promise<number> {
+async function countCharsFromXhtml(
+  zip: JSZip,
+  opfDir: string,
+  spineItems: string[],
+): Promise<number> {
   let total = 0;
-  for await (const entry of Deno.readDir(srcDir)) {
-    if (entry.isFile && entry.name.endsWith(".md") && !entry.name.startsWith(".")) {
-      const content = await Deno.readTextFile(join(srcDir, entry.name));
-      // Mermaidブロックを除外
-      const stripped = content.replace(/```mermaid[\s\S]*?```/g, "");
-      // 空行を除外し、残りの文字数をカウント
-      const lines = stripped.split("\n").filter((line) => line.trim().length > 0);
-      total += lines.join("").length;
+  const skipFiles = ["cover.xhtml", "title_page.xhtml", "nav.xhtml"];
+
+  for (const href of spineItems) {
+    const filename = href.split("/").pop() ?? "";
+    if (skipFiles.includes(filename)) continue;
+
+    const filePath = opfDir ? `${opfDir}/${href}` : href;
+    const xhtmlText = await zip.file(filePath)?.async("string");
+    if (!xhtmlText) continue;
+
+    const doc = parseXml(xhtmlText);
+    const body = doc.querySelector("body");
+    if (!body) continue;
+
+    // SVG要素を除外（Mermaid図がSVGに変換されている）
+    for (const svg of body.querySelectorAll("svg")) {
+      svg.remove();
     }
+
+    const text = body.textContent ?? "";
+    const normalized = text.replace(/\s+/g, "").length;
+    total += normalized;
   }
+
   return total;
 }
 
-async function findEpub(distDir: string): Promise<string | null> {
-  try {
-    for await (const entry of Deno.readDir(distDir)) {
-      if (entry.isFile && entry.name.endsWith(".epub")) {
-        return join(distDir, entry.name);
-      }
+async function processEpub(
+  epubPath: string,
+  filename: string,
+  coversDir: string,
+): Promise<BookMeta> {
+  const data = await Deno.readFile(epubPath);
+  const zip = await JSZip.loadAsync(data);
+  const epubStat = await Deno.stat(epubPath);
+
+  const opfPath = await getOpfPath(zip);
+  const opf = await parseOpf(zip, opfPath);
+
+  const toc = opf.navHref
+    ? await extractToc(zip, opf.opfDir, opf.navHref)
+    : [];
+
+  const totalChars = await countCharsFromXhtml(zip, opf.opfDir, opf.spineItems);
+
+  const slug = toSlug(opf.title);
+  let coverImage: string | null = null;
+  if (opf.coverHref) {
+    const coverPath = opf.opfDir ? `${opf.opfDir}/${opf.coverHref}` : opf.coverHref;
+    const coverData = await zip.file(coverPath)?.async("uint8array");
+    if (coverData) {
+      const ext = opf.coverHref.split(".").pop() ?? "jpg";
+      const coverFilename = `${slug}.${ext}`;
+      await Deno.writeFile(join(coversDir, coverFilename), coverData);
+      coverImage = `covers/${coverFilename}`;
     }
-  } catch {
-    // dist/ がない場合
   }
-  return null;
+
+  return {
+    title: opf.title,
+    subtitle: opf.subtitle,
+    color: DEFAULT_PLACEHOLDER_COLOR,
+    filename,
+    coverImage,
+    date: opf.date,
+    size: formatSize(epubStat.size),
+    readingTime: calcReadingTime(totalChars),
+    readingTimeMinutes: Math.round(totalChars / CHARS_PER_MINUTE),
+    toc,
+  };
 }
 
 async function main() {
-  const bookshelfPath = Deno.args[0];
-  if (!bookshelfPath) {
-    console.error("使い方: deno run --allow-read --allow-write scripts/deploy.ts /path/to/bookshelf");
-    Deno.exit(1);
-  }
-
   const siteRoot = new URL("../", import.meta.url).pathname;
   const epubsDir = join(siteRoot, "epubs");
   const coversDir = join(siteRoot, "covers");
-  await ensureDir(epubsDir);
   await ensureDir(coversDir);
 
   const books: BookMeta[] = [];
 
-  for await (const entry of Deno.readDir(bookshelfPath)) {
-    if (!entry.isDirectory) continue;
+  for await (const entry of Deno.readDir(epubsDir)) {
+    if (!entry.isFile || !entry.name.endsWith(".epub")) continue;
 
-    const bookDir = join(bookshelfPath, entry.name);
-    const yamlPath = join(bookDir, "book.yaml");
-
+    const epubPath = join(epubsDir, entry.name);
     try {
-      await Deno.stat(yamlPath);
-    } catch {
-      continue;
+      const book = await processEpub(epubPath, entry.name, coversDir);
+      books.push(book);
+      console.log(`📖 ${book.title} (${book.size}, ${book.readingTime})`);
+    } catch (err) {
+      console.error(`⚠️  ${entry.name}: ${err}`);
     }
-
-    const yamlContent = await Deno.readTextFile(yamlPath);
-    const yaml = parseYaml(yamlContent) as BookYaml;
-
-    const srcDir = join(bookDir, "src");
-    const distDir = join(bookDir, "dist");
-
-    const epubPath = await findEpub(distDir);
-    if (!epubPath) {
-      console.warn(`⚠️  ${yaml.title}: EPUBが見つかりません`);
-      continue;
-    }
-
-    const epubStat = await Deno.stat(epubPath);
-    const toc = await extractToc(srcDir);
-    const totalChars = await countChars(srcDir);
-
-    const slug = toSlug(yaml.title);
-    const filename = `${slug}.epub`;
-
-    await copy(epubPath, join(epubsDir, filename), { overwrite: true });
-
-    // 表紙画像のコピー
-    const coverSrc = join(bookDir, "assets", "cover.jpg");
-    const coverFilename = `${slug}.jpg`;
-    let coverImage: string | null = null;
-    try {
-      await Deno.stat(coverSrc);
-      await copy(coverSrc, join(coversDir, coverFilename), { overwrite: true });
-      coverImage = `covers/${coverFilename}`;
-    } catch {
-      // 表紙画像がない場合はnull
-    }
-
-    books.push({
-      title: yaml.title,
-      subtitle: yaml.subtitle ?? "",
-      color: yaml.cover?.color ?? "#78716c",
-      filename,
-      coverImage,
-      date: yaml.date ?? "",
-      size: formatSize(epubStat.size),
-      readingTime: calcReadingTime(totalChars),
-      readingTimeMinutes: Math.round(totalChars / CHARS_PER_MINUTE),
-      toc,
-    });
-
-    console.log(`📖 ${yaml.title} (${formatSize(epubStat.size)}, ${calcReadingTime(totalChars)})`);
   }
 
   books.sort((a, b) => a.title.localeCompare(b.title, "ja"));
@@ -194,7 +297,6 @@ async function main() {
 
   console.log(`\n✅ ${books.length}冊のデータを生成しました`);
   console.log(`📄 ${booksJsonPath}`);
-  console.log(`📁 ${epubsDir}`);
 }
 
 main();
