@@ -98,13 +98,17 @@ async function parseOpf(zip: JSZip, opfPath: string): Promise<OpfData> {
   const subtitle = doc.querySelector("dc\\:description, description")?.textContent?.trim() ?? "";
 
   // 日付: dc:dateが空ならdcterms:modifiedから取得
-  let date = doc.querySelector("dc\\:date, date[id]")?.textContent?.trim() ?? "";
+  // DOMParserはtext/htmlモードのため、XMLの名前空間付き要素やvoid要素の扱いに限界がある
+  // 正規表現で直接抽出する
+  let date = "";
+  const dcDateMatch = opfText.match(/<dc:date[^>]*>([^<]+)<\/dc:date>/);
+  if (dcDateMatch?.[1]?.trim()) {
+    date = dcDateMatch[1].trim();
+  }
   if (!date) {
-    for (const meta of doc.querySelectorAll("meta")) {
-      if (meta.getAttribute("property") === "dcterms:modified") {
-        date = formatDate(meta.textContent?.trim() ?? "");
-        break;
-      }
+    const modifiedMatch = opfText.match(/<meta\s+property="dcterms:modified"\s*>([^<]+)<\/meta>/);
+    if (modifiedMatch?.[1]?.trim()) {
+      date = formatDate(modifiedMatch[1].trim());
     }
   }
 
