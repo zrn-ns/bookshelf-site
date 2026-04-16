@@ -26,6 +26,9 @@ interface BookMeta {
   readingTime: string;
   readingTimeMinutes: number;
   toc: string[];
+  author: string;
+  language: string;
+  sizeBytes: number;
 }
 
 const CHARS_PER_MINUTE = 400;
@@ -82,6 +85,8 @@ interface OpfData {
   title: string;
   subtitle: string;
   date: string;
+  author: string;
+  language: string;
   coverHref: string | null;
   navHref: string | null;
   spineItems: string[];
@@ -113,6 +118,14 @@ async function parseOpf(zip: JSZip, opfPath: string): Promise<OpfData> {
       date = formatDate(modifiedMatch[1].trim());
     }
   }
+
+  // 著者: dc:creator
+  const creatorMatch = opfText.match(/<dc:creator[^>]*>([^<]+)<\/dc:creator>/);
+  const author = creatorMatch?.[1]?.trim() ?? "";
+
+  // 言語: dc:language（デフォルト: "ja"）
+  const langMatch = opfText.match(/<dc:language[^>]*>([^<]+)<\/dc:language>/);
+  const language = langMatch?.[1]?.trim() ?? "ja";
 
   // カバー画像: meta[name="cover"]のcontent → manifestのid → href
   let coverHref: string | null = null;
@@ -160,7 +173,7 @@ async function parseOpf(zip: JSZip, opfPath: string): Promise<OpfData> {
     }
   }
 
-  return { title, subtitle, date, coverHref, navHref, spineItems, opfDir };
+  return { title, subtitle, date, author, language, coverHref, navHref, spineItems, opfDir };
 }
 
 async function extractToc(zip: JSZip, opfDir: string, navHref: string): Promise<string[]> {
@@ -272,7 +285,88 @@ async function processEpub(
     readingTime: calcReadingTime(totalChars),
     readingTimeMinutes: Math.round(totalChars / CHARS_PER_MINUTE),
     toc,
+    author: opf.author,
+    language: opf.language,
+    sizeBytes: epubStat.size,
   };
+}
+
+const DEFAULT_SITE_URL = "https://zrn-ns.github.io/bookshelf-site";
+const FEED_ID = "urn:uuid:bookshelf-site-opds-catalog";
+
+function escapeXml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function toAtomDate(date: string): string {
+  if (!date) return new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+  // "2026-04-04" → "2026-04-04T00:00:00Z"
+  // "2026年4月" のような形式はビルド日時にフォールバック
+  if (/^\d{4}-\d{2}-\d{2}/.test(date)) {
+    return date.length === 10 ? `${date}T00:00:00Z` : new Date(date).toISOString().replace(/\.\d{3}Z$/, "Z");
+  }
+  return new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+}
+
+function generateOpdsFeed(books: BookMeta[], siteUrl: string): string {
+  const latestDate = books
+    .map((b) => b.date)
+    .filter((d) => /^\d{4}-\d{2}-\d{2}/.test(d))
+    .sort()
+    .pop();
+  const updatedDate = toAtomDate(latestDate ?? "");
+
+  const entries = books.map((book) => {
+    const entryId = `urn:epub:${book.filename.replace(/\.epub$/, "")}`;
+    const entryDate = toAtomDate(book.date);
+    const epubUrl = `${siteUrl}/epubs/${encodeURIComponent(book.filename)}`;
+
+    let coverLinks = "";
+    if (book.coverImage) {
+      const coverUrl = `${siteUrl}/${book.coverImage}`;
+      const coverType = book.coverImage.endsWith(".png") ? "image/png" : "image/jpeg";
+      coverLinks = `
+    <link rel="http://opds-spec.org/image" href="${escapeXml(coverUrl)}" type="${coverType}"/>
+    <link rel="http://opds-spec.org/image/thumbnail" href="${escapeXml(coverUrl)}" type="${coverType}"/>`;
+    }
+
+    let authorEl = "";
+    if (book.author) {
+      authorEl = `
+    <author><name>${escapeXml(book.author)}</name></author>`;
+    }
+
+    return `  <entry>
+    <title>${escapeXml(book.title)}</title>
+    <id>${escapeXml(entryId)}</id>
+    <updated>${entryDate}</updated>${authorEl}
+    <summary>${escapeXml(book.subtitle)}</summary>
+    <dc:language>${escapeXml(book.language)}</dc:language>
+    <link rel="http://opds-spec.org/acquisition" href="${escapeXml(epubUrl)}" type="application/epub+zip" length="${book.sizeBytes}"/>${coverLinks}
+  </entry>`;
+  });
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"
+      xmlns:dc="http://purl.org/dc/terms/"
+      xmlns:opds="http://opds-spec.org/2010/catalog">
+  <id>${FEED_ID}</id>
+  <title>Bookshelf</title>
+  <updated>${updatedDate}</updated>
+  <author>
+    <name>zrn-ns</name>
+  </author>
+  <link rel="self" href="${escapeXml(siteUrl)}/opds/catalog.xml" type="application/atom+xml;profile=opds-catalog;kind=acquisition"/>
+  <link rel="start" href="${escapeXml(siteUrl)}/opds/catalog.xml" type="application/atom+xml;profile=opds-catalog;kind=acquisition"/>
+
+${entries.join("\n\n")}
+</feed>
+`;
 }
 
 async function main() {
@@ -314,8 +408,17 @@ async function main() {
   const booksJsonPath = join(outDir, "books.json");
   await Deno.writeTextFile(booksJsonPath, JSON.stringify(books, null, 2));
 
+  // OPDSフィード生成
+  const siteUrl = (Deno.env.get("SITE_URL") ?? DEFAULT_SITE_URL).replace(/\/$/, "");
+  const opdsDir = join(outDir, "opds");
+  await ensureDir(opdsDir);
+  const opdsFeed = generateOpdsFeed(books, siteUrl);
+  const opdsPath = join(opdsDir, "catalog.xml");
+  await Deno.writeTextFile(opdsPath, opdsFeed);
+
   console.log(`\n✅ ${books.length}冊のデータを生成しました`);
   console.log(`📄 ${booksJsonPath}`);
+  console.log(`📡 ${opdsPath}`);
 }
 
 main();
